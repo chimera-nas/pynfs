@@ -1,6 +1,7 @@
 from xdrdef.nfs4_const import *
 from xdrdef.nfs4_type import *
 from xdrdef.nfs4_pack import *
+import os
 import nfs_ops
 op = nfs_ops.NFS4ops()
 from .environment import check, fail, create_file, close_file, open_create_file_op
@@ -14,6 +15,8 @@ empty_fflr = ff_layoutreturn4([], [])
 
 empty_p = FlexPacker()
 empty_p.pack_ff_layoutreturn4(empty_fflr)
+
+LAYOUTSTATS_SLEEP_SCALE = float(os.environ.get("PYNFS_LAYOUTSTATS_SLEEP_SCALE", "0.1"))
 
 def check_seqid(stateid, seqid):
     if stateid.seqid != seqid:
@@ -485,7 +488,7 @@ def _LayoutStats(t, env, stats):
         wr_lat.ffil_total_busy_time = get_nfstime(s[14])
         wr_lat.ffil_aggregate_completion_time = get_nfstime(s[15])
 
-        sleeper = s[0]
+        sleeper = s[0] * LAYOUTSTATS_SLEEP_SCALE
         env.sleep(sleeper)
         fflu = ff_layoutupdate4(da.ffda_netaddrs[-1], ds.ffds_fh_vers[-1],
                                 rd_lat, wr_lat, dur, True)
